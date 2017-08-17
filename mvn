@@ -1,0 +1,28 @@
+#!/bin/bash
+
+main() {
+  data_container_exists || create_data_container > /dev/null
+  run_dockerized_mvn_executable "$@"
+}
+
+data_container_exists() {
+  docker ps --all --filter name=maven_data | grep -q maven_data
+}
+
+create_data_container() {
+  docker create --name maven_data --user maven eightycolumns/maven:3.5.0
+}
+
+run_dockerized_mvn_executable() {
+  docker run \
+    --interactive \
+    --tty \
+    --rm \
+    --volumes-from maven_data \
+    --volume "${PWD}:/home/maven/project" \
+    --workdir /home/maven/project \
+    eightycolumns/maven:3.5.0 \
+    "$@"
+}
+
+[ "${BASH_SOURCE[0]}" == "$0" ] && main "$@"
